@@ -69,9 +69,17 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           filter: blob:none
-          fetch-tags: true
+          persist-credentials: false
           sparse-checkout: scripts/sandbox/pick-release-tags.sh
           sparse-checkout-cone-mode: false
+      # Forks do not automatically inherit upstream tag refs. The scheduled
+      # workflow runs in subliterate/hermes-agent, whose origin currently has
+      # no release tags, so fetch only v* tag refs from the canonical upstream.
+      - name: Fetch upstream release tags
+        run: |
+          git fetch --force --no-tags --filter=blob:none --no-recurse-submodules \
+            https://github.com/NousResearch/hermes-agent.git \
+            '+refs/tags/v*:refs/tags/v*'
       - id: pick
         run: |
           set -euo pipefail

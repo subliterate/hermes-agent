@@ -13,8 +13,11 @@ name: Install & Update E2E
 # ships, and would pin an "oldest" that nobody still runs.
 #
 # Triggers:
-#   * every 12 hours, so upstream drift (a new uv, a Node bump, a PyPI change)
-#     surfaces on a schedule rather than in someone's review cycle;
+#   * every 12 hours -- CURRENTLY DISABLED on this fork, see the note above
+#     the commented-out schedule block. It was meant to surface upstream drift
+#     (a new uv, a Node bump, a PyPI change) on a schedule rather than in
+#     someone's review cycle; it is instead failing on the sandbox proxy, so
+#     it is silenced until that is fixed.
 #   * when a release tag is created -- the moment the set of versions users can
 #     update FROM changes, and the moment a broken updater would strand them;
 #   * manually, where you can pick the route and how many releases to sample.
@@ -37,9 +40,19 @@ on:
         required: false
         type: string
         default: '5'
-  schedule:
-    # Every 12 hours, off the hour to avoid the top-of-hour runner crunch.
-    - cron: '20 7,19 * * *'
+  # DISABLED 2026-09-05 — schedule silenced on this fork.
+  # Every scheduled run since 2026-08-13 fails in the installer legs: the
+  # dev-sandbox MITM proxy (scripts/sandbox/proxy.py) drops its upstream TLS
+  # connections to the npm registry with SSLEOFError, npm install starves and
+  # the E2E exits 1. Upstream is red identically (issue NousResearch/hermes-agent#94613,
+  # open, unfixed); this fork's proxy retry mitigation (d8308834c5) reduced but
+  # did not eliminate it. workflow_dispatch and release-tag pushes are
+  # preserved, so a run can still be triggered by hand.
+  # RE-ENABLE: restore the block below once #94613 is fixed upstream and the
+  # fork has resynced. Confirm with one manual run before rescheduling.
+  #schedule:
+  #  # Every 12 hours, off the hour to avoid the top-of-hour runner crunch.
+  #  - cron: '20 7,19 * * *'
   push:
     tags:
       # Release tags only: the repo also carries backup/* and one-off tags.
